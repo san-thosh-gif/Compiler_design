@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lexical Analyser - Simulation</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            min-height: 100vh;
+            color: #fff;
+        }
+        header {
+            background: linear-gradient(90deg, #1a1a2e, #16213e);
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 3px solid #e94560;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+        header h1 {
+            font-size: 28px;
+            color: #e94560;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        header .subtitle {
+            font-size: 14px;
+            color: #a5a5a5;
+        }
+        .student-info {
+            text-align: right;
+            font-size: 14px;
+            color: #ccc;
+        }
+        .student-info span {
+            color: #e94560;
+            font-weight: bold;
+        }
+        nav {
+            background: #16213e;
+            padding: 12px 40px;
+            display: flex;
+            gap: 20px;
+            border-bottom: 1px solid #333;
+        }
+        nav a {
+            color: #e94560;
+            text-decoration: none;
+            font-size: 15px;
+            padding: 8px 20px;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+            border: 1px solid transparent;
+        }
+        nav a:hover, nav a.active {
+            background: #e94560;
+            color: #fff;
+            border-color: #e94560;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 0 40px;
+        }
+        .sim-title {
+            text-align: center;
+            font-size: 36px;
+            margin-bottom: 8px;
+            background: linear-gradient(90deg, #e94560, #ff6b6b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .sim-desc {
+            text-align: center;
+            color: #888;
+            margin-bottom: 30px;
+            font-size: 16px;
+        }
+        .editor-section {
+            display: flex;
+            gap: 25px;
+            margin-bottom: 25px;
+        }
+        .editor-panel, .output-panel {
+            flex: 1;
+            background: #1a1a2e;
+            border: 1px solid #333;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        .panel-header {
+            background: #16213e;
+            padding: 12px 20px;
+            font-size: 16px;
+            font-weight: bold;
+            color: #e94560;
+            border-bottom: 1px solid #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .panel-header .badge {
+            background: #e94560;
+            color: #fff;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+        }
+        textarea {
+            width: 100%;
+            height: 320px;
+            background: #0f0f1a;
+            color: #00ff88;
+            border: none;
+            padding: 20px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            resize: none;
+            outline: none;
+        }
+        textarea::placeholder {
+            color: #555;
+        }
+        .output-content {
+            height: 320px;
+            overflow-y: auto;
+            padding: 15px 20px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 13px;
+        }
+        .output-content::-webkit-scrollbar {
+            width: 8px;
+        }
+        .output-content::-webkit-scrollbar-thumb {
+            background: #e94560;
+            border-radius: 4px;
+        }
+        .output-content::-webkit-scrollbar-track {
+            background: #0f0f1a;
+        }
+        .btn-row {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .btn {
+            padding: 14px 35px;
+            border: none;
+            border-radius: 50px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .btn-run {
+            background: linear-gradient(90deg, #e94560, #c0392b);
+            color: #fff;
+            box-shadow: 0 5px 20px rgba(233, 69, 96, 0.4);
+        }
+        .btn-run:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 30px rgba(233, 69, 96, 0.6);
+        }
+        .btn-clear {
+            background: linear-gradient(90deg, #333, #555);
+            color: #fff;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        .btn-clear:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.5);
+        }
+        .btn-sample {
+            background: linear-gradient(90deg, #1abc9c, #16a085);
+            color: #fff;
+            box-shadow: 0 5px 15px rgba(26,188,156,0.3);
+        }
+        .btn-sample:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(26,188,156,0.5);
+        }
+        /* Token row styling */
+        .token-row {
+            display: flex;
+            padding: 6px 0;
+            border-bottom: 1px solid #222;
+            align-items: center;
+        }
+        .token-row:hover {
+            background: rgba(233, 69, 96, 0.08);
+        }
+        .token-line {
+            color: #666;
+            width: 60px;
+            font-size: 12px;
+        }
+        .token-type {
+            padding: 2px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            width: 110px;
+            text-align: center;
+            margin-right: 15px;
+        }
+        .token-value {
+            color: #eee;
+            font-size: 13px;
+        }
+        .type-KEYWORD    { background: #e94560; color: #fff; }
+        .type-IDENTIFIER { background: #3498db; color: #fff; }
+        .type-NUMBER     { background: #2ecc71; color: #fff; }
+        .type-STRING     { background: #f39c12; color: #fff; }
+        .type-OPERATOR   { background: #9b59b6; color: #fff; }
+        .type-SEPARATOR  { background: #1abc9c; color: #fff; }
+        .type-UNKNOWN    { background: #e74c3c; color: #fff; }
+
+        /* Stats bar */
+        .stats-bar {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-bottom: 30px;
+        }
+        .stat-item {
+            background: #1a1a2e;
+            border: 1px solid #333;
+            border-radius: 10px;
+            padding: 15px 25px;
+            text-align: center;
+            min-width: 130px;
+        }
+        .stat-item .stat-num {
+            font-size: 28px;
+            font-weight: bold;
+            color: #e94560;
+        }
+        .stat-item .stat-label {
+            font-size: 12px;
+            color: #888;
+            text-transform: uppercase;
+            margin-top: 5px;
+        }
+
+        footer {
+            text-align: center;
+            padding: 25px;
+            background: #1a1a2e;
+            border-top: 2px solid #e94560;
+            color: #777;
+            font-size: 14px;
+            margin-top: 40px;
+        }
+        footer span {
+            color: #e94560;
+        }
+
+        @media (max-width: 768px) {
+            .editor-section { flex-direction: column; }
+            .btn-row { flex-direction: column; align-items: center; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div>
+            <h1>Lexical Analyser</h1>
+            <div class="subtitle">Compiler Design - Virtual Lab | Simulation</div>
+        </div>
+        <div class="student-info">
+            <div>Created by: <span>Santhosh</span></div>
+            <div>Register No: <span>2301010008</span></div>
+        </div>
+    </header>
+
+    <nav>
+        <a href="index.html">Home</a>
+        <a href="simulation.html" class="active">Simulation</a>
+    </nav>
+
+    <div class="container">
+        <h2 class="sim-title">Lexical Analyser Simulation</h2>
+        <p class="sim-desc">Enter C-like source code below and click "Analyse" to tokenize it</p>
+
+        <!-- Stats Bar -->
+        <div class="stats-bar" id="statsBar">
+            <div class="stat-item"><div class="stat-num" id="statTotal">0</div><div class="stat-label">Total Tokens</div></div>
+            <div class="stat-item"><div class="stat-num" id="statKeywords">0</div><div class="stat-label">Keywords</div></div>
+            <div class="stat-item"><div class="stat-num" id="statIdentifiers">0</div><div class="stat-label">Identifiers</div></div>
+            <div class="stat-item"><div class="stat-num" id="statNumbers">0</div><div class="stat-label">Numbers</div></div>
+            <div class="stat-item"><div class="stat-num" id="statOperators">0</div><div class="stat-label">Operators</div></div>
+            <div class="stat-item"><div class="stat-num" id="statSeparators">0</div><div class="stat-label">Separators</div></div>
+        </div>
+
+        <!-- Editor & Output -->
+        <div class="editor-section">
+            <div class="editor-panel">
+                <div class="panel-header">
+                    <span>📝 Source Code</span>
+                    <span class="badge">INPUT</span>
+                </div>
+                <textarea id="sourceCode" placeholder="// Enter your C code here...
+int main() {
+    int a = 10;
+    float b = 3.14;
+    if (a > b) {
+        return a;
+    }
+    return 0;
+}"></textarea>
+            </div>
+            <div class="output-panel">
+                <div class="panel-header">
+                    <span>📋 Token Stream</span>
+                    <span class="badge" id="tokenCount">OUTPUT</span>
+                </div>
+                <div class="output-content" id="outputArea">
+                    <p style="color: #555; text-align: center; margin-top: 120px;">
+                        Click <strong style="color:#e94560;">"Analyse"</strong> to see tokens here
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Buttons -->
+        <div class="btn-row">
+            <button class="btn btn-sample" onclick="loadSample()">📄 Load Sample</button>
+            <button class="btn btn-run" onclick="analyse()">▶ Analyse</button>
+            <button class="btn btn-clear" onclick="clearAll()">🗑 Clear</button>
+        </div>
+    </div>
+
+    <footer>
+        <p>Lexical Analyser Virtual Lab | Created by <span>Santhosh</span> | Reg No: <span>2301010008</span></p>
+        <p>&copy; 2025 Compiler Design Lab</p>
+    </footer>
+
+    <script>
+        // Keywords list (matches your lexical.c)
+        const KEYWORDS = [
+            "int", "float", "if", "else", "return",
+            "while", "for", "char", "double", "void"
+        ];
+
+        function isKeyword(word) {
+            return KEYWORDS.includes(word);
+        }
+
+        function isAlpha(c) {
+            return /[a-zA-Z_]/.test(c);
+        }
+
+        function isAlnum(c) {
+            return /[a-zA-Z0-9_]/.test(c);
+        }
+
+        function isDigit(c) {
+            return /[0-9]/.test(c);
+        }
+
+        function isOperator(c) {
+            return "+-*/=%!<>&|".includes(c);
+        }
+
+        function isSeparator(c) {
+            return ";,(){}[]".includes(c);
+        }
+
+        // Lexical analyser — mirrors your lexical.c logic
+        function lexicalAnalyse(input) {
+            const tokens = [];
+            let i = 0;
+            let lineNo = 1;
+
+            while (i < input.length) {
+                let c = input[i];
+
+                // Track line numbers
+                if (c === '\n') {
+                    lineNo++;
+                    i++;
+                    continue;
+                }
+
+                // Skip whitespace
+                if (/\s/.test(c)) {
+                    i++;
+                    continue;
+                }
+
+                // Skip single-line comments
+                if (c === '/' && i + 1 < input.length && input[i + 1] === '/') {
+                    while (i < input.length && input[i] !== '\n') i++;
+                    continue;
+                }
+
+                // Skip multi-line comments
+                if (c === '/' && i + 1 < input.length && input[i + 1] === '*') {
+                    i += 2;
+                    while (i + 1 < input.length && !(input[i] === '*' && input[i + 1] === '/')) {
+                        if (input[i] === '\n') lineNo++;
+                        i++;
+                    }
+                    i += 2;
+                    continue;
+                }
+
+                // Identifiers and Keywords
+                if (isAlpha(c)) {
+                    let word = '';
+                    while (i < input.length && isAlnum(input[i])) {
+                        word += input[i];
+                        i++;
+                    }
+                    if (isKeyword(word)) {
+                        tokens.push({ line: lineNo, type: 'KEYWORD', value: word });
+                    } else {
+                        tokens.push({ line: lineNo, type: 'IDENTIFIER', value: word });
+                    }
+                    continue;
+                }
+
+                // Numbers (integer and float)
+                if (isDigit(c)) {
+                    let num = '';
+                    let dotSeen = false;
+                    while (i < input.length && (isDigit(input[i]) || (input[i] === '.' && !dotSeen))) {
+                        if (input[i] === '.') dotSeen = true;
+                        num += input[i];
+                        i++;
+                    }
+                    tokens.push({ line: lineNo, type: 'NUMBER', value: num });
+                    continue;
+                }
+
+                // String literals
+                if (c === '"') {
+                    let str = '';
+                    i++; // skip opening quote
+                    while (i < input.length && input[i] !== '"') {
+                        str += input[i];
+                        i++;
+                    }
+                    i++; // skip closing quote
+                    tokens.push({ line: lineNo, type: 'STRING', value: '"' + str + '"' });
+                    continue;
+                }
+
+                // Operators
+                if (isOperator(c)) {
+                    tokens.push({ line: lineNo, type: 'OPERATOR', value: c });
+                    i++;
+                    continue;
+                }
+
+                // Separators
+                if (isSeparator(c)) {
+                    tokens.push({ line: lineNo, type: 'SEPARATOR', value: c });
+                    i++;
+                    continue;
+                }
+
+                // Unknown
+                tokens.push({ line: lineNo, type: 'UNKNOWN', value: c });
+                i++;
+            }
+
+            return tokens;
+        }
+
+        function analyse() {
+            const source = document.getElementById('sourceCode').value;
+            const output = document.getElementById('outputArea');
+            const tokenCountBadge = document.getElementById('tokenCount');
+
+            if (!source.trim()) {
+                output.innerHTML = '<p style="color:#e94560; text-align:center; margin-top:120px;">⚠️ Please enter some source code first!</p>';
+                return;
+            }
+
+            const tokens = lexicalAnalyse(source);
+
+            // Update stats
+            let stats = { KEYWORD: 0, IDENTIFIER: 0, NUMBER: 0, STRING: 0, OPERATOR: 0, SEPARATOR: 0, UNKNOWN: 0 };
+            tokens.forEach(t => { stats[t.type] = (stats[t.type] || 0) + 1; });
+
+            document.getElementById('statTotal').textContent = tokens.length;
+            document.getElementById('statKeywords').textContent = stats.KEYWORD;
+            document.getElementById('statIdentifiers').textContent = stats.IDENTIFIER;
+            document.getElementById('statNumbers').textContent = stats.NUMBER;
+            document.getElementById('statOperators').textContent = stats.OPERATOR;
+            document.getElementById('statSeparators').textContent = stats.SEPARATOR;
+            tokenCountBadge.textContent = tokens.length + ' TOKENS';
+
+            // Render tokens
+            let html = '';
+            tokens.forEach((token, idx) => {
+                html += `
+                    <div class="token-row">
+                        <span class="token-line">L${token.line}</span>
+                        <span class="token-type type-${token.type}">${token.type}</span>
+                        <span class="token-value">${escapeHtml(token.value)}</span>
+                    </div>`;
+            });
+
+            output.innerHTML = html;
+        }
+
+        function escapeHtml(str) {
+            return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
+        function clearAll() {
+            document.getElementById('sourceCode').value = '';
+            document.getElementById('outputArea').innerHTML = '<p style="color: #555; text-align: center; margin-top: 120px;">Click <strong style="color:#e94560;">"Analyse"</strong> to see tokens here</p>';
+            document.getElementById('tokenCount').textContent = 'OUTPUT';
+            document.getElementById('statTotal').textContent = '0';
+            document.getElementById('statKeywords').textContent = '0';
+            document.getElementById('statIdentifiers').textContent = '0';
+            document.getElementById('statNumbers').textContent = '0';
+            document.getElementById('statOperators').textContent = '0';
+            document.getElementById('statSeparators').textContent = '0';
+        }
+
+        function loadSample() {
+            document.getElementById('sourceCode').value =
+`int main() {
+    int a = 10;
+    float b = 3.14;
+    char name = "Santhosh";
+
+    if (a > b) {
+        return a;
+    }
+
+    for (int i = 0; i < a; i++) {
+        b = b + 1.5;
+    }
+
+    while (a != 0) {
+        a = a - 1;
+    }
+
+    return 0;
+}`;
+        }
+    </script>
+
+</body>
+</html>
