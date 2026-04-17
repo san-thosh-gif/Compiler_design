@@ -1,0 +1,460 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>FIRST & FOLLOW Set Calculator</title>
+  <style>
+    :root{
+      --bg:#0b1220; --card:#111a2e; --muted:#93a4c7; --text:#e8eefc;
+      --accent:#6ea8fe; --accent2:#7ee787; --warn:#ffcc66; --danger:#ff6b6b;
+      --border: rgba(255,255,255,.10);
+      --shadow: 0 12px 40px rgba(0,0,0,.35);
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+    }
+    *{ box-sizing:border-box; }
+    body{
+      margin:0; font-family:var(--sans); color:var(--text);
+      background: radial-gradient(1200px 600px at 20% 0%, rgba(110,168,254,.20), transparent 60%),
+                  radial-gradient(900px 500px at 90% 10%, rgba(126,231,135,.14), transparent 60%),
+                  var(--bg);
+      min-height:100vh;
+    }
+    header{
+      padding:28px 18px 14px;
+      max-width:1100px; margin:0 auto;
+    }
+    h1{ margin:0 0 8px; font-size:28px; letter-spacing:.2px; }
+    .sub{ margin:0; color:var(--muted); line-height:1.45; }
+    main{ max-width:1100px; margin:0 auto; padding:16px 18px 40px; }
+    .grid{
+      display:grid;
+      grid-template-columns: 1.1fr .9fr;
+      gap:16px;
+    }
+    @media (max-width: 980px){
+      .grid{ grid-template-columns: 1fr; }
+    }
+    .card{
+      background: rgba(17,26,46,.90);
+      border:1px solid var(--border);
+      border-radius:16px;
+      box-shadow: var(--shadow);
+      padding:16px;
+      backdrop-filter: blur(6px);
+    }
+    .card h2{ margin:0 0 10px; font-size:16px; color:#dbe6ff; }
+    label{ display:block; font-size:13px; color:var(--muted); margin:10px 0 6px; }
+    textarea, input[type="text"]{
+      width:100%;
+      background: rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.12);
+      color:var(--text);
+      border-radius:12px;
+      padding:12px 12px;
+      font-family: var(--mono);
+      font-size:13px;
+      outline:none;
+    }
+    textarea{ min-height:220px; resize:vertical; line-height:1.45; }
+    textarea:focus, input:focus{ border-color: rgba(110,168,254,.65); box-shadow: 0 0 0 4px rgba(110,168,254,.15); }
+    .row{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:12px;
+    }
+    @media (max-width: 720px){
+      .row{ grid-template-columns: 1fr; }
+    }
+    .btns{
+      display:flex; flex-wrap:wrap; gap:10px;
+      margin-top:12px;
+    }
+    button{
+      appearance:none;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      color:var(--text);
+      border-radius:12px;
+      padding:10px 12px;
+      font-weight:600;
+      cursor:pointer;
+      transition: .15s transform ease, .15s background ease, .15s border-color ease;
+    }
+    button:hover{ transform: translateY(-1px); border-color: rgba(110,168,254,.55); }
+    .primary{
+      background: linear-gradient(135deg, rgba(110,168,254,.22), rgba(110,168,254,.10));
+      border-color: rgba(110,168,254,.55);
+    }
+    .good{
+      background: linear-gradient(135deg, rgba(126,231,135,.18), rgba(126,231,135,.08));
+      border-color: rgba(126,231,135,.45);
+    }
+    .danger{
+      background: linear-gradient(135deg, rgba(255,107,107,.18), rgba(255,107,107,.08));
+      border-color: rgba(255,107,107,.45);
+    }
+    .note{
+      margin-top:10px;
+      font-size:12px;
+      color:var(--muted);
+      line-height:1.45;
+    }
+    .pill{
+      display:inline-block;
+      font-family: var(--mono);
+      font-size:12px;
+      padding:2px 8px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.06);
+      color:#dbe6ff;
+      margin-right:6px;
+    }
+    .out{
+      white-space:pre-wrap;
+      background: rgba(0,0,0,.25);
+      border:1px solid rgba(255,255,255,.12);
+      border-radius:12px;
+      padding:12px;
+      font-family: var(--mono);
+      font-size:13px;
+      line-height:1.5;
+      overflow:auto;
+      max-height: 520px;
+    }
+    .err{
+      border-color: rgba(255,107,107,.55);
+      box-shadow: 0 0 0 4px rgba(255,107,107,.12);
+    }
+    footer{
+      max-width:1100px;
+      margin:0 auto;
+      padding:0 18px 28px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    a{ color: var(--accent); text-decoration: none; }
+    a:hover{ text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>FIRST &amp; FOLLOW Set Calculator</h1>
+    <p class="sub">
+      Enter a context-free grammar (CFG) and compute <span class="pill">FIRST</span> and <span class="pill">FOLLOW</span> sets.
+      Supports ε as <span class="pill">ε</span> or <span class="pill">eps</span>.
+    </p>
+  </header>
+
+  <main class="grid">
+    <section class="card">
+      <h2>Grammar Input</h2>
+
+      <label for="grammar">Productions (one per line)</label>
+      <textarea id="grammar" spellcheck="false" placeholder="Example:
+E -> T E'
+E' -> + T E' | ε
+T -> F T'
+T' -> * F T' | ε
+F -> ( E ) | id"></textarea>
+
+      <div class="row">
+        <div>
+          <label for="startSymbol">Start symbol</label>
+          <input id="startSymbol" type="text" placeholder="(optional) default = LHS of first rule" />
+        </div>
+        <div>
+          <label for="epsilonToken">Epsilon token</label>
+          <input id="epsilonToken" type="text" value="ε" />
+        </div>
+      </div>
+
+      <div class="btns">
+        <button class="primary" id="btnCompute">Compute FIRST &amp; FOLLOW</button>
+        <button class="good" id="btnLoadExample">Load example</button>
+        <button class="danger" id="btnClear">Clear</button>
+      </div>
+
+      <div class="note">
+        Notes:
+        <ul>
+          <li>Format: <span class="pill">A -&gt; α | β</span> (also accepts <span class="pill">A ::= α</span>).</li>
+          <li>Tokens are space-separated; if you don’t use spaces, it will fall back to character-based splitting.</li>
+          <li>End marker is <span class="pill">$</span> and is added to FOLLOW(start).</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Results</h2>
+      <label>Output</label>
+      <div id="output" class="out">Enter grammar and click “Compute”.</div>
+    </section>
+  </main>
+
+  <footer>
+    Tip: If your terminals are multi-character like <span class="pill">id</span> or <span class="pill">num</span>, use spaces in productions.
+  </footer>
+
+  <script>
+    // ---------- Parsing ----------
+    function normalizeEpsilon(sym, epsilonToken) {
+      if (!sym) return sym;
+      const s = sym.trim();
+      if (s === "ε" || s.toLowerCase() === "eps" || s.toLowerCase() === "epsilon") return epsilonToken;
+      return s;
+    }
+
+    function splitAlternatives(rhs) {
+      // split by | but keep it simple (no regex fancy for this scope)
+      return rhs.split("|").map(s => s.trim()).filter(Boolean);
+    }
+
+    function tokenize(alt) {
+      // Prefer whitespace tokenization for multi-char terminals, fallback to char-by-char.
+      const hasSpace = /\s/.test(alt.trim());
+      if (hasSpace) return alt.trim().split(/\s+/).filter(Boolean);
+
+      // No spaces: attempt to keep common patterns like E' together, and identifiers like id
+      // We'll treat sequences of letters/digits/_ as a token, and single punctuation as separate.
+      const tokens = [];
+      let i = 0;
+      while (i < alt.length) {
+        const ch = alt[i];
+        if (/\s/.test(ch)) { i++; continue; }
+
+        // Prime symbol handling: E'
+        if (/[A-Za-z_]/.test(ch)) {
+          let j = i + 1;
+          while (j < alt.length && /[A-Za-z0-9_]/.test(alt[j])) j++;
+          // include trailing primes: ''' etc
+          while (j < alt.length && alt[j] === "'") j++;
+          tokens.push(alt.slice(i, j));
+          i = j;
+          continue;
+        }
+
+        // digits
+        if (/[0-9]/.test(ch)) {
+          let j = i + 1;
+          while (j < alt.length && /[0-9]/.test(alt[j])) j++;
+          tokens.push(alt.slice(i, j));
+          i = j;
+          continue;
+        }
+
+        // punctuation as its own token
+        tokens.push(ch);
+        i++;
+      }
+      return tokens.filter(t => t.length > 0);
+    }
+
+    function parseGrammar(text, epsilonTokenInput, explicitStart) {
+      const epsilonToken = (epsilonTokenInput || "ε").trim() || "ε";
+
+      const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
+      if (lines.length === 0) throw new Error("Grammar is empty.");
+
+      const productions = new Map(); // NT -> array of RHS arrays (tokens)
+      const nonTerminals = new Set();
+      const rhsSymbols = new Set();
+      const order = [];
+
+      for (const line of lines) {
+        // Accept A -> ... or A ::= ...
+        let parts;
+        if (line.includes("->")) parts = line.split("->");
+        else if (line.includes("::=")) parts = line.split("::=");
+        else throw new Error(`Invalid production (missing '->' or '::='): ${line}`);
+
+        if (parts.length < 2) throw new Error(`Invalid production: ${line}`);
+        const lhs = parts[0].trim();
+        const rhs = parts.slice(1).join("->").trim();
+
+        if (!lhs) throw new Error(`Missing LHS in: ${line}`);
+        nonTerminals.add(lhs);
+        if (!productions.has(lhs)) { productions.set(lhs, []); order.push(lhs); }
+
+        const alts = splitAlternatives(rhs);
+        if (alts.length === 0) throw new Error(`Missing RHS in: ${line}`);
+
+        for (const altRaw of alts) {
+          let toks = tokenize(altRaw).map(t => normalizeEpsilon(t, epsilonToken));
+          if (toks.length === 0) toks = [epsilonToken];
+          // Normalize "ε" alone, or "eps" alone, etc.
+          if (toks.length === 1 && (toks[0] === "")) toks = [epsilonToken];
+
+          productions.get(lhs).push(toks);
+          toks.forEach(s => rhsSymbols.add(s));
+        }
+      }
+
+      // Start symbol: explicit or first LHS
+      const startSymbol = (explicitStart && explicitStart.trim()) ? explicitStart.trim() : order[0];
+
+      // terminals: anything that appears on RHS but is not a nonterminal and not epsilonToken
+      const terminals = new Set();
+      for (const s of rhsSymbols) {
+        if (s === epsilonToken) continue;
+        if (!nonTerminals.has(s)) terminals.add(s);
+      }
+
+      return { productions, nonTerminals, terminals, startSymbol, epsilonToken, order };
+    }
+
+    // ---------- FIRST ----------
+    function computeFirstSets(G) {
+      const { productions, nonTerminals, terminals, epsilonToken } = G;
+
+      const FIRST = new Map();
+      // init
+      for (const t of terminals) FIRST.set(t, new Set([t]));
+      FIRST.set(epsilonToken, new Set([epsilonToken]));
+      for (const nt of nonTerminals) FIRST.set(nt, new Set());
+
+      function firstOfSequence(seq) {
+        // returns a Set of terminals/epsilon in FIRST(seq)
+        const out = new Set();
+        if (seq.length === 0) { out.add(epsilonToken); return out; }
+
+        let allNullable = true;
+        for (const sym of seq) {
+          const fs = FIRST.get(sym) || new Set();
+          for (const x of fs) if (x !== epsilonToken) out.add(x);
+          if (!fs.has(epsilonToken)) { allNullable = false; break; }
+        }
+        if (allNullable) out.add(epsilonToken);
+        return out;
+      }
+
+      let changed = true;
+      while (changed) {
+        changed = false;
+        for (const [A, rhss] of productions.entries()) {
+          for (const rhs of rhss) {
+            const f = firstOfSequence(rhs);
+            const setA = FIRST.get(A);
+            const before = setA.size;
+            for (const x of f) setA.add(x);
+            if (setA.size !== before) changed = true;
+          }
+        }
+      }
+
+      return { FIRST, firstOfSequence };
+    }
+
+    // ---------- FOLLOW ----------
+    function computeFollowSets(G, FIRST, firstOfSequence) {
+      const { productions, nonTerminals, startSymbol, epsilonToken } = G;
+      const FOLLOW = new Map();
+      for (const nt of nonTerminals) FOLLOW.set(nt, new Set());
+      FOLLOW.get(startSymbol).add("$");
+
+      let changed = true;
+      while (changed) {
+        changed = false;
+
+        for (const [A, rhss] of productions.entries()) {
+          for (const rhs of rhss) {
+            for (let i = 0; i < rhs.length; i++) {
+              const B = rhs[i];
+              if (!nonTerminals.has(B)) continue;
+
+              const beta = rhs.slice(i + 1);
+              const firstBeta = firstOfSequence(beta);
+
+              const followB = FOLLOW.get(B);
+              const before = followB.size;
+
+              // add FIRST(beta) - {ε} to FOLLOW(B)
+              for (const x of firstBeta) {
+                if (x !== epsilonToken) followB.add(x);
+              }
+
+              // if beta =>* ε, add FOLLOW(A) to FOLLOW(B)
+              if (beta.length === 0 || firstBeta.has(epsilonToken)) {
+                const followA = FOLLOW.get(A);
+                for (const x of followA) followB.add(x);
+              }
+
+              if (followB.size !== before) changed = true;
+            }
+          }
+        }
+      }
+
+      return FOLLOW;
+    }
+
+    // ---------- Rendering ----------
+    function setToSortedArray(s) {
+      return Array.from(s).sort((a,b) => a.localeCompare(b));
+    }
+
+    function formatSets(G, FIRST, FOLLOW) {
+      const { order } = G;
+      const lines = [];
+
+      lines.push("=== FIRST sets ===");
+      for (const nt of order) {
+        lines.push(`FIRST(${nt}) = { ${setToSortedArray(FIRST.get(nt)).join(", ")} }`);
+      }
+      lines.push("");
+      lines.push("=== FOLLOW sets ===");
+      for (const nt of order) {
+        lines.push(`FOLLOW(${nt}) = { ${setToSortedArray(FOLLOW.get(nt)).join(", ")} }`);
+      }
+      return lines.join("\n");
+    }
+
+    // ---------- UI ----------
+    const elGrammar = document.getElementById("grammar");
+    const elStart = document.getElementById("startSymbol");
+    const elEps = document.getElementById("epsilonToken");
+    const elOut = document.getElementById("output");
+
+    function showError(msg) {
+      elOut.classList.add("err");
+      elOut.textContent = "Error: " + msg;
+    }
+    function showText(msg) {
+      elOut.classList.remove("err");
+      elOut.textContent = msg;
+    }
+
+    document.getElementById("btnCompute").addEventListener("click", () => {
+      try {
+        const G = parseGrammar(elGrammar.value, elEps.value, elStart.value);
+        const { FIRST, firstOfSequence } = computeFirstSets(G);
+        const FOLLOW = computeFollowSets(G, FIRST, firstOfSequence);
+
+        showText(formatSets(G, FIRST, FOLLOW));
+      } catch (e) {
+        showError(e.message || String(e));
+      }
+    });
+
+    document.getElementById("btnClear").addEventListener("click", () => {
+      elGrammar.value = "";
+      elStart.value = "";
+      showText("Enter grammar and click “Compute”.");
+    });
+
+    document.getElementById("btnLoadExample").addEventListener("click", () => {
+      elGrammar.value =
+`E -> T E'
+E' -> + T E' | ε
+T -> F T'
+T' -> * F T' | ε
+F -> ( E ) | id`;
+      elStart.value = "E";
+      elEps.value = "ε";
+      showText("Loaded example. Click “Compute FIRST & FOLLOW”.");
+    });
+  </script>
+</body>
+</html>
